@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>피트니스 트래커</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --primary: #3b82f6;
+      --text: #f3f4f6;
+      --subtext: #9ca3af;
+      --border: #2e2e2e;
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 16px; padding-bottom: 80px; }
+    h1 { font-size: 1.4rem; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .date-picker { background: var(--card); color: var(--text); border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; font-size: 1rem; width: 100%; margin-bottom: 16px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .tab-btn { flex: 1; padding: 10px; background: var(--card); color: var(--subtext); border: 1px solid var(--border); border-radius: 8px; font-weight: bold; cursor: pointer; }
+    .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .card { background: var(--card); padding: 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px; }
+    .card h2 { font-size: 1.1rem; margin-bottom: 12px; color: var(--primary); }
+    .input-group { display: flex; gap: 8px; margin-bottom: 10px; }
+    .input-group input, .input-group select { flex: 1; padding: 10px; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 8px; font-size: 0.95rem; width: 100%; }
+    button.action-btn { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; }
+    .summary-box { display: flex; justify-content: space-around; background: var(--bg); padding: 12px; border-radius: 8px; margin-bottom: 12px; text-align: center; }
+    .summary-item span { display: block; font-size: 0.8rem; color: var(--subtext); }
+    .summary-item strong { font-size: 1.2rem; color: var(--primary); }
+    ul.record-list { list-style: none; }
+    ul.record-list li { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+    ul.record-list li:last-child { border-bottom: none; }
+    .del-btn { background: var(--danger); color: white; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; }
+    .badge { background: #2563eb33; color: #60a5fa; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; margin-right: 6px; }
+  </style>
+</head>
+<body>
+
+  <h1>나의 운동·식단 일지</h1>
+  <input type="date" id="currentDate" class="date-picker">
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('workout', this)">운동일지</button>
+    <button class="tab-btn" onclick="switchTab('diet', this)">칼로리</button>
+    <button class="tab-btn" onclick="switchTab('inbody', this)">인바디</button>
+  </div>
+
+  <div id="workout" class="tab-content active">
+    <div class="card">
+      <h2>운동 기록 추가</h2>
+      <div class="input-group">
+        <select id="woCategory">
+          <option value="가슴/삼두">가슴 / 삼두</option>
+          <option value="등/이두">등 / 이두</option>
+          <option value="어깨/코어">어깨 / 코어</option>
+          <option value="하체">하체</option>
+          <option value="러닝/유산소">러닝 / 유산소</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <input type="text" id="woName" placeholder="종목 (예: 벤치프레스, 10km 러닝)">
+      </div>
+      <div class="input-group">
+        <input type="text" id="woDetail" placeholder="세부내용 (예: 80kg 10회 4세트 / 5'15&quot; 페이스)">
+      </div>
+      <button class="action-btn" onclick="addWorkout()">운동 저장</button>
+    </div>
+    <div class="card">
+      <h2>오늘의 운동 목록</h2>
+      <ul id="workoutList" class="record-list"></ul>
+    </div>
+  </div>
+
+  <div id="diet" class="tab-content">
+    <div class="card">
+      <h2>식단 / 보충제 추가</h2>
+      <div class="summary-box">
+        <div class="summary-item">
+          <span>총 칼로리</span>
+          <strong id="totalKcal">0 kcal</strong>
+        </div>
+        <div class="summary-item">
+          <span>총 단백질</span>
+          <strong id="totalProtein">0 g</strong>
+        </div>
+      </div>
+      <div class="input-group">
+        <input type="text" id="foodName" placeholder="음식명 (예: 닭가슴살, 프로틴)">
+      </div>
+      <div class="input-group">
+        <input type="number" id="foodKcal" placeholder="칼로리 (kcal)">
+        <input type="number" id="foodProtein" placeholder="단백질 (g)">
+      </div>
+      <button class="action-btn" onclick="addFood()">식단 저장</button>
+    </div>
+    <div class="card">
+      <h2>오늘 먹은 목록</h2>
+      <ul id="foodList" class="record-list"></ul>
+    </div>
+  </div>
+
+  <div id="inbody" class="tab-content">
+    <div class="card">
+      <h2>오늘의 인바디 기록</h2>
+      <div class="input-group">
+        <input type="number" step="0.1" id="ibWeight" placeholder="체중 (kg)">
+        <input type="number" step="0.1" id="ibMuscle" placeholder="골격근량 (kg)">
+        <input type="number" step="0.1" id="ibFat" placeholder="체지방률 (%)">
+      </div>
+      <button class="action-btn" onclick="saveInbody()">인바디 저장</button>
+    </div>
+    <div class="card">
+      <h2>최근 인바디 추이</h2>
+      <ul id="inbodyHistory" class="record-list"></ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 24px;">
+    <h2>데이터 백업 관리</h2>
+    <div class="input-group">
+      <button class="tab-btn" onclick="exportData()">데이터 복사(백업)</button>
+      <button class="tab-btn" onclick="importData()">데이터 붙여넣기(복원)</button>
+    </div>
+  </div>
+
+  <script>
+    const dateInput = document.getElementById('currentDate');
+    dateInput.valueAsDate = new Date();
+
+    function getStorageData() {
+      const data = localStorage.getItem('myFitnessData');
+      return data ? JSON.parse(data) : {};
+    }
+
+    function setStorageData(data) {
+      localStorage.setItem('myFitnessData', JSON.stringify(data));
+    }
+
+    function getCurrentDateKey() {
+      return dateInput.value;
+    }
+
+    function ensureDateEntry(data, dateKey) {
+      if (!data[dateKey]) {
+        data[dateKey] = { workouts: [], foods: [], inbody: null };
+      }
+    }
+
+    function switchTab(tabId, btnEl) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      if (btnEl) btnEl.classList.add('active');
+    }
+
+    function addWorkout() {
+      const cat = document.getElementById('woCategory').value;
+      const name = document.getElementById('woName').value.trim();
+      const detail = document.getElementById('woDetail').value.trim();
+      if (!name) return alert('운동 종목을 입력해주세요.');
+
+      const data = getStorageData();
+      const dateKey = getCurrentDateKey();
+      ensureDateEntry(data, dateKey);
+
+      data[dateKey].workouts.push({ cat, name, detail });
+      setStorageData(data);
+
+      document.getElementById('woName').value = '';
+      document.getElementById('woDetail').value = '';
+      renderAll();
+    }
+
+    function deleteWorkout(index) {
+      const data = getStorageData();
+      const dateKey = getCurrentDateKey();
+      data[dateKey].workouts.splice(index, 1);
+      setStorageData(data);
+      renderAll();
+    }
+
+    function addFood() {
+      const name = document.getElementById('foodName').value.trim();
+      const kcal = Number(document.getElementById('foodKcal').value) || 0;
+      const protein = Number(document.getElementById('foodProtein').value) || 0;
+      if (!name) return alert('음식명을 입력해주세요.');
+
+      const data = getStorageData();
+      const dateKey = getCurrentDateKey();
+      ensureDateEntry(data, dateKey);
+
+      data[dateKey].foods.push({ name, kcal, protein });
+      setStorageData(data);
+
+      document.getElementById('foodName').value = '';
+      document.getElementById('foodKcal').value = '';
+      document.getElementById('foodProtein').value = '';
+      renderAll();
+    }
+
+    function deleteFood(index) {
+      const data = getStorageData();
+      const dateKey = getCurrentDateKey();
+      data[dateKey].foods.splice(index, 1);
+      setStorageData(data);
+      renderAll();
+    }
+
+    function saveInbody() {
+      const weight = document.getElementById('ibWeight').value;
+      const muscle = document.getElementById('ibMuscle').value;
+      const fat = document.getElementById('ibFat').value;
+      if (!weight && !muscle && !fat) return alert('수치를 하나 이상 입력해주세요.');
+
+      const data = getStorageData();
+      const dateKey = getCurrentDateKey();
+      ensureDateEntry(data, dateKey);
+
+      data[dateKey].inbody = { weight, muscle, fat };
+      setStorageData(data);
+      renderAll();
+    }
+
+    function renderAll() {
+      const data = getStorageData();
+      const dateKey = getCurrentDateKey();
+      const todayData = data[dateKey] || { workouts: [], foods: [], inbody: null };
+
+      const woList = document.getElementById('workoutList');
+      woList.innerHTML = todayData.workouts.length === 0 
+        ? '<li style="color:var(--subtext);">기록된 운동이 없습니다.</li>' 
+        : todayData.workouts.map((w, i) => `
+          <li>
+            <div>
+              <span class="badge">${w.cat}</span>
+              <strong>${w.name}</strong>
+              <div style="font-size:0.85rem; color:var(--subtext); margin-top:2px;">${w.detail}</div>
+            </div>
+            <button class="del-btn" onclick="deleteWorkout(${i})">삭제</button>
+          </li>
+        `).join('');
+
+      const foodList = document.getElementById('foodList');
+      let totalK = 0, totalP = 0;
+      todayData.foods.forEach(f => { totalK += f.kcal; totalP += f.protein; });
+      document.getElementById('totalKcal').textContent = `${totalK} kcal`;
+      document.getElementById('totalProtein').textContent = `${totalP} g`;
+
+      foodList.innerHTML = todayData.foods.length === 0
+        ? '<li style="color:var(--subtext);">기록된 식단이 없습니다.</li>'
+        : todayData.foods.map((f, i) => `
+          <li>
+            <div>
+              <strong>${f.name}</strong>
+              <span style="font-size:0.85rem; color:var(--subtext); margin-left:6px;">${f.kcal}kcal / 단백질 ${f.protein}g</span>
+            </div>
+            <button class="del-btn" onclick="deleteFood(${i})">삭제</button>
+          </li>
+        `).join('');
+
+      if (todayData.inbody) {
+        document.getElementById('ibWeight').value = todayData.inbody.weight || '';
+        document.getElementById('ibMuscle').value = todayData.inbody.muscle || '';
+        document.getElementById('ibFat').value = todayData.inbody.fat || '';
+      } else {
+        document.getElementById('ibWeight').value = '';
+        document.getElementById('ibMuscle').value = '';
+        document.getElementById('ibFat').value = '';
+      }
+
+      const ibHistory = document.getElementById('inbodyHistory');
+      const sortedDates = Object.keys(data).filter(d => data[d].inbody).sort().reverse();
+      ibHistory.innerHTML = sortedDates.length === 0
+        ? '<li style="color:var(--subtext);">기록된 인바디가 없습니다.</li>'
+        : sortedDates.map(d => {
+            const ib = data[d].inbody;
+            return `
+              <li>
+                <strong>${d}</strong>
+                <span>체중 ${ib.weight || '-'}kg · 골격근 ${ib.muscle || '-'}kg · 체지방 ${ib.fat || '-'}%</span>
+              </li>
+            `;
+          }).join('');
+    }
+
+    function exportData() {
+      const dataStr = localStorage.getItem('myFitnessData') || '{}';
+      navigator.clipboard.writeText(dataStr).then(() => {
+        alert('모든 기록이 클립보드에 복사되었습니다!');
+      });
+    }
+
+    function importData() {
+      const input = prompt('백업해둔 JSON 데이터를 여기에 붙여넣으세요:');
+      if (input) {
+        try {
+          JSON.parse(input);
+          localStorage.setItem('myFitnessData', input);
+          renderAll();
+          alert('데이터가 성공적으로 복원되었습니다!');
+        } catch (e) {
+          alert('올바르지 않은 데이터 형식입니다.');
+        }
+      }
+    }
+
+    dateInput.addEventListener('change', renderAll);
+    renderAll();
+  </script>
+</body>
+</html>
